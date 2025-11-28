@@ -79,6 +79,12 @@ services:
       - "traefik.http.middlewares.astarte-pairing.stripprefix.prefixes=/pairing"
       - "traefik.http.middlewares.astarte-pairing.stripprefix.forceSlash=false"
       - "traefik.http.services.astarte-pairing.loadbalancer.server.port=4003"
+      # Route for fdo
+      - "traefik.http.routers.fdo-rewrite-router.rule=Host(`${FDO_REALM}.api.${DOCKER_COMPOSE_ASTARTE_BASE_DOMAIN}`)"
+      - "traefik.http.routers.fdo-rewrite-router.entrypoints=web"
+      - "traefik.http.routers.fdo-rewrite-router.middlewares=fdo-rewrite-mid"
+      - "traefik.http.routers.fdo-rewrite-router.service=astarte-pairing"
+      - "traefik.http.middlewares.fdo-rewrite-mid.addprefix.prefix=/v1/${FDO_REALM}"
 
   astarte-appengine-api:
     image: astarte/astarte_appengine_api:1.3-snapshot
@@ -180,6 +186,7 @@ services:
       - "--entrypoints.web.address=:80"
       # Expose Astarte broker
       - "--entryPoints.vernemq.address=:8883"
+      - "--accesslog=true"
     ports:
       # The HTTP port
       - "80:80"
