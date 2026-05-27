@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 services:
   astarte-housekeeping:
     image: astarte/astarte_housekeeping:1.2.0
@@ -20,9 +20,7 @@ services:
     environment:
       HOUSEKEEPING_API_JWT_PUBLIC_KEY_PATH: "/keys/housekeeping_public.pem"
     volumes:
-      - type: bind
-        source: ./compose/astarte-keys/housekeeping_public.pem
-        target: /keys/housekeeping_public.pem
+      - ./compose/astarte-keys/housekeeping_public.pem:/keys/housekeeping_public.pem:z
     restart: on-failure
     depends_on:
       - "rabbitmq"
@@ -162,7 +160,7 @@ services:
   astarte-dashboard:
     image: astarte/astarte-dashboard:1.2.0
     volumes:
-      - ./compose/astarte-dashboard/config.json:/usr/share/nginx/html/user-config/config.json
+      - ./compose/astarte-dashboard/config.json:/usr/share/nginx/html/user-config/config.json:z
     depends_on:
       - "astarte-realm-management-api"
       - "astarte-appengine-api"
@@ -209,7 +207,9 @@ services:
       - "8883:8883"
     volumes:
       # So that Traefik can listen to the Docker events
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /run/user/1000/podman/podman.sock:/var/run/docker.sock:z
+    security_opt:
+      - label=type:container_runtime_t
     networks:
       default:
         aliases:
@@ -225,14 +225,14 @@ services:
     image: rabbitmq:3.12.0-management
     restart: on-failure
     volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
+      - rabbitmq-data:/var/lib/rabbitmq:z
 
   # CFSSL
   cfssl:
     image: astarte/cfssl:1.5.0-astarte.4
     volumes:
-      - ./compose/cfssl-config:/config
-      - cfssl-data:/data
+      - ./compose/cfssl-config:/config:z
+      - cfssl-data:/data:z
     command: cfssl serve -address=0.0.0.0 -ca=/data/ca.pem -ca-key=/data/ca-key.pem -port=8080 -config=/etc/cfssl/ca_root_config.json
     # Restart if we fail
     restart: on-failure
@@ -242,7 +242,7 @@ services:
     image: scylladb/scylla:5.2.2
     restart: on-failure
     volumes:
-      - scylla-data:/var/lib/scylla
+      - scylla-data:/var/lib/scylla:z
 
   # VerneMQ
   vernemq:
@@ -260,8 +260,8 @@ services:
       DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__CASSANDRA__NODES: "scylla:9042"
       CFSSL_URL: "http://cfssl:8080"
     volumes:
-      - vernemq-data:/opt/vernemq/data
-      - ./compose/vernemq-certs:/etc/ssl/vernemq-certs
+      - vernemq-data:/opt/vernemq/data:z
+      - ./compose/vernemq-certs:/etc/ssl/vernemq-certs:z
     depends_on:
       - "cfssl"
       - "rabbitmq"
